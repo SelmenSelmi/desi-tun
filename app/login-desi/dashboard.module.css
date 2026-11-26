@@ -1,0 +1,54 @@
+.dashboard, .login {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  color: #162733;
+}
+.login { max-width: 27rem; padding-top: 12vh; }
+.dashboard h1, .login h1 { font-size: clamp(2rem, 6vw, 3rem); }
+.dashboard h2 { margin: 2rem 0 .8rem; font-size: 1.4rem; }
+.top, .sectionRow, .actions, .save { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.top, .sectionRow { justify-content: space-between; }
+.dashboard a, .login a { text-decoration: underline; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: .8rem;
+  margin: 0;
+}
+.metrics div, .editor, .login form {
+  background: white;
+  border: 1px solid #ccd9df;
+  border-radius: .75rem;
+  padding: 1rem;
+}
+.metrics dd { margin: .25rem 0 0; font-size: 2rem; font-weight: 750; }
+.editor { margin: 1rem 0; min-width: 0; }
+.editor fieldset { border: 1px solid #ccd9df; margin: 1rem 0; padding: 1rem; min-width: 0; }
+.editor legend { padding: 0 .35rem; font-weight: 700; }
+.dashboard label, .login label { display: block; margin: .6rem 0; font-weight: 650; }
+.dashboard input:not([type="checkbox"]), .dashboard textarea, .dashboard select, .login input {
+  display: block;
+  width: 100%;
+  margin-top: .3rem;
+  padding: .6rem;
+  border: 1px solid #879ca8;
+  border-radius: .35rem;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+.dashboard button, .login button {
+  padding: .45rem .75rem;
+  border: 1px solid #879ca8;
+  border-radius: .35rem;
+  background: #f2f6f8;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.dashboard button:disabled, .login button:disabled { opacity: .5; cursor: default; }
+.save button, .login button { background: #123746; color: white; }
+.item { border-bottom: 1px solid #ccd9df; padding-bottom: .8rem; margin-bottom: .8rem; }
+.photo img { display: block; width: auto; max-width: 100%; height: auto; max-height: 8rem; }
+.save { position: sticky; bottom: 0; background: white; padding: .75rem 0; }

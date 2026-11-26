@@ -3,22 +3,15 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-const partners = [
-  { name: "Decathlon", logo: "decathlon.webp" },
-  { name: "Banana Moon", logo: "banana-moon.webp" },
-  { name: "Odeclas", logo: "odeclas.webp" },
-  { name: "Newsport" },
-  { name: "Active Sport" },
-  { name: "Quick Send" },
-];
+type Partner = { name: string; logo: string };
 
-function PartnerList({ duplicate = false }: { duplicate?: boolean }) {
+function PartnerList({ partners, duplicate = false }: { partners: Partner[]; duplicate?: boolean }) {
   return (
     <ul className="partner-list" aria-hidden={duplicate || undefined} role="list">
       {partners.map(({ name, logo }) => (
         <li key={name}>
           {logo ? (
-            <Image src={`/images/partners/${logo}`} alt={name} width={132} height={38} loading="eager" unoptimized />
+            <Image src={logo} alt={name} width={132} height={38} loading="eager" unoptimized />
           ) : (
             <span>{name}</span>
           )}
@@ -28,7 +21,7 @@ function PartnerList({ duplicate = false }: { duplicate?: boolean }) {
   );
 }
 
-export default function PartnerTicker() {
+export default function PartnerTicker({ title, partners }: { title: string; partners: Partner[] }) {
   const section = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -46,11 +39,11 @@ export default function PartnerTicker() {
   return (
     <section className="partner-ticker" ref={section} aria-labelledby="partner-ticker-title" data-running={visible}>
       <div className="wrap partner-bar">
-        <h2 id="partner-ticker-title">Nos partenaires</h2>
+        <h2 id="partner-ticker-title">{title}</h2>
         <div className="partner-window">
           <div className="partner-track">
-            <PartnerList />
-            <PartnerList duplicate />
+            <PartnerList partners={partners} />
+            <PartnerList partners={partners} duplicate />
           </div>
         </div>
       </div>

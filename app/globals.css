@@ -349,3 +349,5 @@ address a:hover { text-decoration: underline; }
     gap: 23px;
   }
 }
+
+.address-lines { display: block; white-space: pre-line; }
