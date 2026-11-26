@@ -6,6 +6,8 @@ SubliTunis public website and content dashboard.
 
 Use Node.js 24 or later. Install dependencies with `bun install --frozen-lockfile` and run `bun run dev`. The Next.js server runs on Node.js.
 
+On Windows without Bun, run `npm.cmd install` followed by `npm.cmd run dev` in PowerShell, then open http://localhost:3000. The `.cmd` form also works when PowerShell script execution is disabled.
+
 Add these variables in `.env.local` for local development or in the production server environment.
 
 | Variable | Purpose |

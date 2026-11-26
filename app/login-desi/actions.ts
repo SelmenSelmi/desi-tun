@@ -9,7 +9,7 @@ import { maxVideoBytes, maxVideoMegabytes } from "../../lib/media-limits";
 export async function login(_state: string, data: FormData) {
   const password = data.get("password");
   if (typeof password !== "string" || !(await startSession(password))) return "Mot de passe incorrect.";
-  redirect("/login-desi");
+  redirect("/login-desi/tableau-de-bord");
 }
 
 export async function logout() {
