@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import type { SiteContent } from "../lib/site-content";
 import { readSite } from "../lib/site-store";
 import Visit from "./visit";
+import { hasPersistentStorage } from "../lib/desi-storage";
 import type { Metadata } from "next";
 import Image from "next/image";
 import MobileNavigation from "./mobile-navigation";
@@ -178,7 +179,7 @@ export default function Home() {
   return (
     <>
       <ScrollReveals />
-      <Visit />
+      {hasPersistentStorage() && <Visit />}
       <a className="skip" href="#contenu">{general.skip}</a>
       <header>
         <div className="wrap topbar">

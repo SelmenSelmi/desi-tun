@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { adminPassword, isAdmin } from "../../lib/desi-auth";
+import { hasPersistentStorage } from "../../lib/desi-storage";
 import { LoginForm } from "./editor";
 import styles from "./dashboard.module.css";
 
@@ -18,8 +19,9 @@ export default async function DesiDashboard() {
       <div className={styles.loginCard}>
         <Link href="/">← Retour au site</Link>
         <h1>SubliTunis</h1>
-        <p>Connectez-vous à votre espace d’administration.</p>
-        {adminPassword() ? <LoginForm /> : <p>L’accès administrateur doit être configuré sur le serveur.</p>}
+        {!hasPersistentStorage() ? <p>L’administration nécessite un hébergement avec stockage persistant.</p>
+          : adminPassword() ? <><p>Connectez-vous à votre espace d’administration.</p><LoginForm /></>
+          : <p>L’accès administrateur doit être configuré sur le serveur.</p>}
       </div>
     </main>
   );

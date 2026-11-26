@@ -1,10 +1,12 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { hasPersistentStorage } from "./desi-storage";
 
 const cookieName = "desi_session";
 const duration = 60 * 60 * 8;
 
 export function adminPassword() {
+  if (!hasPersistentStorage()) return undefined;
   const password = process.env.DESI_ADMIN_PASSWORD;
   return password && password.length >= 24 ? password : undefined;
 }

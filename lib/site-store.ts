@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { hasPersistentStorage } from "./desi-storage";
 import { defaultContent, type SiteContent } from "./site-content";
 
 let database: DatabaseSync | undefined;
@@ -57,6 +58,7 @@ function matches(value: unknown, template: unknown, key = ""): boolean {
 }
 
 export function readSite() {
+  if (!hasPersistentStorage()) return { content: defaultContent, revision: 0 };
   const row = db().prepare("SELECT content, revision FROM site WHERE id = 1").get() as { content: string | null; revision: number };
   return { content: row.content ? JSON.parse(row.content) as SiteContent : defaultContent, revision: row.revision };
 }
@@ -74,6 +76,7 @@ export function writeSite(content: SiteContent, revision: number) {
 }
 
 export function recordVisit() {
+  if (!hasPersistentStorage()) return;
   db().prepare(`INSERT INTO visits VALUES (date('now'), 1)
     ON CONFLICT(day) DO UPDATE SET count = count + 1`).run();
 }
@@ -92,6 +95,7 @@ export function insertMedia(mime: string, bytes: Uint8Array) {
 }
 
 export function readMediaInfo(id: string) {
+  if (!hasPersistentStorage()) return undefined;
   return db().prepare("SELECT mime, length(bytes) AS size FROM media WHERE id = ?").get(id) as
     { mime: string; size: number } | undefined;
 }
