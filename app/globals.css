@@ -305,7 +305,7 @@ address a:hover { text-decoration: underline; }
 }
 
 .partner-ticker { background: var(--soft); border-block: 1px solid var(--line); }
-.partner-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 62px; }
+.partner-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; min-height: 62px; }
 .partner-bar h2 { color: var(--teal); font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 .partner-window { overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent); }
 .partner-track { display: flex; width: max-content; animation: partner-scroll var(--partner-duration, 16s) linear infinite paused; }
@@ -314,8 +314,6 @@ address a:hover { text-decoration: underline; }
 .partner-list li { display: grid; place-items: center; width: 158px; min-height: 60px; }
 .partner-list img { width: 126px; height: 33px; object-fit: contain; }
 .partner-list span { color: var(--ink); font: 700 1.06rem var(--heading); white-space: nowrap; }
-.partner-motion { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); color: var(--teal); cursor: pointer; }
-.partner-motion:hover { border-color: var(--teal); }
 
 @keyframes partner-scroll {
   to { transform: translateX(calc(-1 * var(--partner-distance, 0px))); }
@@ -326,15 +324,6 @@ address a:hover { text-decoration: underline; }
   .partner-bar h2 { white-space: normal; width: 9ch; line-height: 1.3; }
   .partner-list li { width: 135px; }
   .partner-list img { width: 105px; height: 30px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .partner-ticker:not([data-motion="play"]) .partner-window { overflow: visible; mask-image: none; }
-  .partner-ticker:not([data-motion="play"]) .partner-track { width: auto; animation: none; }
-  .partner-ticker:not([data-motion="play"]) .partner-list { flex: 1; flex-wrap: wrap; gap: 4px 14px; padding-block: 7px; }
-  .partner-ticker:not([data-motion="play"]) .partner-list li { width: auto; min-height: 38px; white-space: normal; }
-  .partner-ticker:not([data-motion="play"]) .partner-list img { width: 88px; height: 27px; }
-  .partner-ticker:not([data-motion="play"]) .partner-list[aria-hidden] { display: none; }
 }
 
 @media (max-width: 780px) {
