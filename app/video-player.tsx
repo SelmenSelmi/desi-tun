@@ -31,10 +31,10 @@ export default function VideoPlayer({ file, poster, labelId, title, shape }: Vid
 
   return (
     <div className={`video-stage ${shape}`}>
-      <video ref={player} controls playsInline preload="none" poster={`/media/${poster}`}
+      <video ref={player} controls playsInline preload="none" poster={poster || undefined}
         aria-labelledby={labelId} onPlay={() => setStarted(true)}>
-        <source src={`/media/${file}`} type="video/mp4" />
-        <a href={`/media/${file}`}>Télécharger la vidéo</a>
+        <source src={file} />
+        <a href={file}>Télécharger la vidéo</a>
       </video>
       {!started && (
         <button type="button" className="film-play" onClick={play} aria-label={`Lire la vidéo « ${title} »`}>
