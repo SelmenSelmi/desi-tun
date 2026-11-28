@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronRight, Clapperboard, LogOut, Menu, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { createContext, useActionState, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { defaultContent, type SiteContent } from "../../lib/site-content";
-import { login, logout, publish, uploadPhoto, uploadVideo } from "./actions";
+import { login, logout, publish, uploadPhoto } from "./actions";
 import { adminBase, adminPages, type EditorSection } from "./navigation";
-import { maxVideoBytes, maxVideoMegabytes } from "../../lib/media-limits";
+import { maxVideoBytes, maxVideoMegabytes, mediaChunkBytes } from "../../lib/media-limits";
 import styles from "./dashboard.module.css";
 
 const labels: Record<string, string> = {
@@ -87,11 +87,25 @@ function MediaField({ label, value, onChange, markUpload, video }: {
     data.set(video ? "video" : "photo", file);
     let failure: string | undefined;
     try {
-      const result = await (video ? uploadVideo(data) : uploadPhoto(data));
+      let result: { url?: string; error?: string };
+      if (video) {
+        const mime = /\.mp4$/i.test(file.name) ? "video/mp4" : /\.webm$/i.test(file.name) ? "video/webm" : "";
+        if (!mime) throw new Error("Formats acceptés : MP4 et WebM.");
+        const start = await fetch("/api/desi/uploads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mime, size: file.size }) });
+        if (!start.ok) throw new Error("Impossible de démarrer le téléversement.");
+        const { id } = await start.json();
+        for (let offset = 0, part = 0; offset < file.size; offset += mediaChunkBytes, part++) {
+          const response = await fetch(`/api/desi/uploads/${id}/${part}`, { method: "PUT", body: file.slice(offset, offset + mediaChunkBytes) });
+          if (!response.ok) throw new Error("Le téléversement de la vidéo a échoué.");
+        }
+        const finish = await fetch("/api/desi/uploads", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+        if (!finish.ok) throw new Error("Impossible de terminer le téléversement.");
+        result = await finish.json();
+      } else result = await uploadPhoto(data);
       if (result.url) onChange(result.url);
       else failure = result.error ?? "Le téléversement a échoué.";
-    } catch {
-      failure = "Le téléversement a échoué.";
+    } catch (error) {
+      failure = error instanceof Error ? error.message : "Le téléversement a échoué.";
     } finally {
       markUpload(-1, failure);
       setUploading(false);

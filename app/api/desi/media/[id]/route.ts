@@ -1,4 +1,5 @@
-import { readMediaBytes, readMediaInfo } from "../../../../../lib/site-store";
+import { readChunkedMediaBytes, readMediaBytes, readMediaInfo } from "../../../../../lib/site-store";
+import { mediaChunkBytes } from "../../../../../lib/media-limits";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -25,7 +26,8 @@ async function serve(request: Request, { params }: Context) {
   const requested = request.method === "GET" && !request.headers.has("if-range")
     ? request.headers.get("range")
     : null;
-  const range = requested ? parseRange(requested, media.size) : null;
+  const parsed = requested ? parseRange(requested, media.size) : null;
+  const range = parsed && media.chunked ? { start: parsed.start, end: Math.min(parsed.end, parsed.start + mediaChunkBytes - 1) } : parsed;
   if (requested && !range) {
     return new Response(null, {
       status: 416,
@@ -37,7 +39,20 @@ async function serve(request: Request, { params }: Context) {
   const length = range ? range.end - start + 1 : media.size;
   headers.set("Content-Length", String(length));
   if (range) headers.set("Content-Range", `bytes ${start}-${range.end}/${media.size}`);
-  const body = request.method === "HEAD" ? null : await readMediaBytes(id, start, length);
+  let sent = 0;
+  const body = request.method === "HEAD" ? null : media.chunked && !range
+    ? new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        const position = start + sent;
+        if (sent >= length) { controller.close(); return; }
+        try {
+          const bytes = await readChunkedMediaBytes(id, position, Math.min(mediaChunkBytes, length - sent));
+          sent += bytes.length;
+          controller.enqueue(bytes);
+        } catch (error) { controller.error(error); }
+      },
+    })
+    : media.chunked ? await readChunkedMediaBytes(id, start, length) : await readMediaBytes(id, start, length);
   return new Response(body, { status: range ? 206 : 200, headers });
 }
 

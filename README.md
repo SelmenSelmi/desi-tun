@@ -23,6 +23,6 @@ Use the dashboard to edit text, navigation, contact details, SEO, photos and log
 
 For production, run `bun run build` and `bun run start` behind HTTPS on a Node.js server with one persistent local volume. SQLite stores the published content, media uploads, and aggregated views. Include the database in backups using SQLite's backup mechanism. This storage setup requires a persistent server filesystem. Set any reverse proxy request body limit to at least 201 MiB to allow video uploads.
 
-Vercel Functions impose a smaller request limit, so the current upload flow cannot accept large files there. Use an HTTPS video URL on Vercel until direct-to-object-storage uploads are configured.
+Video uploads are sent in 512 KiB pieces so they fit within Vercel's request limit. Uploaded videos are stored in the configured database, so check its storage and transfer quotas when uploading large files.
 
 On Vercel, the public site serves the bundled content and assets. Dashboard publishing, uploaded media, and visit tracking require persistent storage and are disabled there. Keep Vercel's system environment variables exposed so the application can detect `VERCEL=1`. A SQLite file in `/tmp` cannot preserve dashboard changes between instances or deployments.
