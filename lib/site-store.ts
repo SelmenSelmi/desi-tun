@@ -1,26 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { createClient, type Client } from "@libsql/client";
 import { hasPersistentStorage } from "./desi-storage";
 import { defaultContent, type SiteContent } from "./site-content";
 
-let database: DatabaseSync | undefined;
+let database: Client | undefined;
+let initialization: Promise<void> | undefined;
 
-function db() {
-  if (database) return database;
+async function db() {
+  if (database && initialization) { await initialization; return database; }
   const path = resolve(/* turbopackIgnore: true */ process.env.DESI_DATABASE_PATH || ".desi/site.sqlite");
-  mkdirSync(dirname(path), { recursive: true });
-  const connection = new DatabaseSync(path);
-  connection.exec(`
-    PRAGMA busy_timeout = 5000;
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS site (id INTEGER PRIMARY KEY, content TEXT, revision INTEGER NOT NULL);
-    INSERT OR IGNORE INTO site VALUES (1, NULL, 0);
-    CREATE TABLE IF NOT EXISTS visits (day TEXT PRIMARY KEY, count INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS media (id TEXT PRIMARY KEY, mime TEXT NOT NULL, bytes BLOB NOT NULL);
-  `);
+  if (!process.env.TURSO_DATABASE_URL) mkdirSync(dirname(path), { recursive: true });
+  const connection = createClient({ url: process.env.TURSO_DATABASE_URL || `file:${path}`, authToken: process.env.TURSO_AUTH_TOKEN });
   database = connection;
+  initialization = connection.batch([
+    "CREATE TABLE IF NOT EXISTS site (id INTEGER PRIMARY KEY, content TEXT, revision INTEGER NOT NULL)",
+    "INSERT OR IGNORE INTO site VALUES (1, NULL, 0)",
+    "CREATE TABLE IF NOT EXISTS visits (day TEXT PRIMARY KEY, count INTEGER NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS media (id TEXT PRIMARY KEY, mime TEXT NOT NULL, bytes BLOB NOT NULL)",
+  ], "write").then(() => {}).catch((error) => { database = undefined; initialization = undefined; throw error; });
+  await initialization;
   return connection;
 }
 
@@ -57,51 +57,49 @@ function matches(value: unknown, template: unknown, key = ""): boolean {
     });
 }
 
-export function readSite() {
+export async function readSite() {
   if (!hasPersistentStorage()) return { content: defaultContent, revision: 0 };
-  const row = db().prepare("SELECT content, revision FROM site WHERE id = 1").get() as { content: string | null; revision: number };
-  return { content: row.content ? JSON.parse(row.content) as SiteContent : defaultContent, revision: row.revision };
+  const row = (await (await db()).execute("SELECT content, revision FROM site WHERE id = 1")).rows[0];
+  return { content: row.content ? JSON.parse(String(row.content)) as SiteContent : defaultContent, revision: Number(row.revision) };
 }
 
-export function writeSite(content: SiteContent, revision: number) {
+export async function writeSite(content: SiteContent, revision: number) {
   if (!matches(content, defaultContent)) return "Vérifiez les adresses, les liens et les champs du formulaire.";
   const order = new Set(content.sections.map(({ section }) => section));
   if (content.sections.length !== defaultContent.sections.length
     || !defaultContent.sections.every(({ section }) => order.has(section))) {
     return "La liste des sections est invalide.";
   }
-  const result = db().prepare("UPDATE site SET content = ?, revision = revision + 1 WHERE id = 1 AND revision = ?")
-    .run(JSON.stringify(content), revision);
-  if (!result.changes) return "Une autre session a publié des changements. Rechargez la page avant de publier.";
+  const result = await (await db()).execute({ sql: "UPDATE site SET content = ?, revision = revision + 1 WHERE id = 1 AND revision = ?", args: [JSON.stringify(content), revision] });
+  if (!result.rowsAffected) return "Une autre session a publié des changements. Rechargez la page avant de publier.";
 }
 
-export function recordVisit() {
+export async function recordVisit() {
   if (!hasPersistentStorage()) return;
-  db().prepare(`INSERT INTO visits VALUES (date('now'), 1)
-    ON CONFLICT(day) DO UPDATE SET count = count + 1`).run();
+  await (await db()).execute(`INSERT INTO visits VALUES (date('now'), 1)
+    ON CONFLICT(day) DO UPDATE SET count = count + 1`);
 }
 
-export function readVisits() {
-  return db().prepare(`SELECT coalesce(sum(count), 0) AS total,
+export async function readVisits() {
+  const row = (await (await db()).execute(`SELECT coalesce(sum(count), 0) AS total,
     coalesce(sum(CASE WHEN day = date('now') THEN count END), 0) AS today,
-    coalesce(sum(CASE WHEN day >= date('now', '-6 day') THEN count END), 0) AS week FROM visits`)
-    .get() as { total: number; today: number; week: number };
+    coalesce(sum(CASE WHEN day >= date('now', '-6 day') THEN count END), 0) AS week FROM visits`)).rows[0];
+  return { total: Number(row.total), today: Number(row.today), week: Number(row.week) };
 }
 
-export function insertMedia(mime: string, bytes: Uint8Array) {
+export async function insertMedia(mime: string, bytes: Uint8Array) {
   const id = randomUUID();
-  db().prepare("INSERT INTO media VALUES (?, ?, ?)").run(id, mime, bytes);
+  await (await db()).execute({ sql: "INSERT INTO media VALUES (?, ?, ?)", args: [id, mime, Buffer.from(bytes)] });
   return `/api/desi/media/${id}`;
 }
 
-export function readMediaInfo(id: string) {
+export async function readMediaInfo(id: string) {
   if (!hasPersistentStorage()) return undefined;
-  return db().prepare("SELECT mime, length(bytes) AS size FROM media WHERE id = ?").get(id) as
-    { mime: string; size: number } | undefined;
+  const row = (await (await db()).execute({ sql: "SELECT mime, length(bytes) AS size FROM media WHERE id = ?", args: [id] })).rows[0];
+  return row ? { mime: String(row.mime), size: Number(row.size) } : undefined;
 }
 
-export function readMediaBytes(id: string, start: number, length: number) {
-  const row = db().prepare("SELECT substr(bytes, ?, ?) AS bytes FROM media WHERE id = ?")
-    .get(start + 1, length, id) as { bytes: Uint8Array<ArrayBuffer> };
-  return row.bytes;
+export async function readMediaBytes(id: string, start: number, length: number) {
+  const row = (await (await db()).execute({ sql: "SELECT substr(bytes, ?, ?) AS bytes FROM media WHERE id = ?", args: [start + 1, length, id] })).rows[0];
+  return new Uint8Array(row.bytes as ArrayBuffer);
 }

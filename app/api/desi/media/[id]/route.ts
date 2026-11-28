@@ -13,7 +13,7 @@ function parseRange(value: string, size: number) {
 
 async function serve(request: Request, { params }: Context) {
   const { id } = await params;
-  const media = readMediaInfo(id);
+  const media = await readMediaInfo(id);
   if (!media) return new Response(null, { status: 404 });
 
   const headers = new Headers({
@@ -37,7 +37,7 @@ async function serve(request: Request, { params }: Context) {
   const length = range ? range.end - start + 1 : media.size;
   headers.set("Content-Length", String(length));
   if (range) headers.set("Content-Range", `bytes ${start}-${range.end}/${media.size}`);
-  const body = request.method === "HEAD" ? null : readMediaBytes(id, start, length);
+  const body = request.method === "HEAD" ? null : await readMediaBytes(id, start, length);
   return new Response(body, { status: range ? 206 : 200, headers });
 }
 

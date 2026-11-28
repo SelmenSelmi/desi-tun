@@ -12,6 +12,6 @@ export const metadata: Metadata = {
 
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   if (!(await isAdmin())) redirect("/login-desi");
-  const { content, revision } = readSite();
+  const { content, revision } = await readSite();
   return <AdminWorkspace initial={content} initialRevision={revision}>{children}</AdminWorkspace>;
 }

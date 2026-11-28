@@ -19,7 +19,7 @@ export async function logout() {
 
 export async function publish(content: SiteContent, revision: number) {
   if (!(await isAdmin())) return { error: "Session expirée. Reconnectez-vous." };
-  const error = writeSite(content, revision);
+  const error = await writeSite(content, revision);
   return error ? { error } : { revision: revision + 1 };
 }
 
@@ -36,7 +36,7 @@ export async function uploadPhoto(data: FormData) {
     : format.toString("ascii", 0, 4) === "RIFF" && format.toString("ascii", 8) === "WEBP" ? "image/webp"
     : null;
   if (!mime) return { error: "Formats acceptés : JPEG, PNG et WebP." };
-  return { url: insertMedia(mime, bytes) };
+  return { url: await insertMedia(mime, bytes) };
 }
 
 export async function uploadVideo(data: FormData) {
@@ -56,5 +56,5 @@ export async function uploadVideo(data: FormData) {
   if (!mime) return { error: "Formats acceptés : MP4 et WebM." };
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  return { url: insertMedia(mime, bytes) };
+  return { url: await insertMedia(mime, bytes) };
 }

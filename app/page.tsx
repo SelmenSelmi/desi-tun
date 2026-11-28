@@ -23,8 +23,8 @@ function Brand({ general }: { general: SiteContent["general"] }) {
 
 export const dynamic = "force-dynamic";
 
-export function generateMetadata(): Metadata {
-  const { content: { general } } = readSite();
+export async function generateMetadata(): Promise<Metadata> {
+  const { content: { general } } = await readSite();
   return {
     title: general.metaTitle,
     description: general.metaDescription,
@@ -36,8 +36,8 @@ const statIcons = [CalendarDays, Layers3, Building2, UsersRound];
 const serviceIcons = [Printer, Scissors, Shirt];
 const partnershipIcons = [Scissors, Layers3, PackageCheck];
 
-export default function Home() {
-  const { content } = readSite();
+export default async function Home() {
+  const { content } = await readSite();
   const { general, hero, stats, films, workshop, catalog, collaboration, contact, ticker } = content;
   const visibleSections = content.sections.filter(({ visible }) => visible);
   const hidden = new Set(content.sections.filter(({ visible }) => !visible).map(({ section }) => section));

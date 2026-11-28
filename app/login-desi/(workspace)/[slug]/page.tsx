@@ -22,7 +22,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ slug
 
   if (page.section) return <SectionEditor section={page.section} />;
 
-  const { today, week, total } = readVisits();
+  const { today, week, total } = await readVisits();
   const metrics = [
     { label: "Aujourd’hui (UTC)", value: today, icon: Eye },
     { label: "7 derniers jours", value: week, icon: CalendarDays },
